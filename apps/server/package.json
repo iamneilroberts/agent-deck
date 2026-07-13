@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@agentdeck/adapter-codex": "*",
+    "@agentdeck/adapter-claude": "*",
     "@agentdeck/event-store": "*",
     "@agentdeck/fake-adapter": "*",
     "@agentdeck/shared": "*",
