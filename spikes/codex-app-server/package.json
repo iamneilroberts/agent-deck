@@ -1,0 +1,17 @@
+{
+  "name": "@agentdeck/spike-codex-app-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 0 Spike A — drive the real codex app-server over stdio end to end.",
+  "scripts": {
+    "spike": "tsx src/spike.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
