@@ -101,9 +101,12 @@ a later phase), with zero re-plumbing. This is deliberate, not an omission.
   404 for unknown session, `isGitRepo:false` path, `/artifacts` filters the event stream.
 - **Security**: `?path=-x`, `?path=../../etc/passwd`, `?path=/abs/outside` → 400; assert no git
   process is spawned for a rejected path.
-- **DoD live check** (Opus): boot the server, real session in a real git repo with real edits →
-  `/files` lists them, `/diff` returns the unified diff, `/artifacts` returns `[]`. Mirrors the
-  Phase 2 live-drive style.
+- **DoD live check** (Opus) — **DONE ✅**: booted the real server against a real git repo with real
+  edits (modify/add/delete). Every check passed: `/files` classified keep.txt→modified,
+  new.txt→untracked, gone.txt→deleted (+ branch/head); `/diff` returned the real unified diff
+  (contained the added line); `/diff?path=keep.txt` scoped to one file (excluded others);
+  `/diff?path=../../etc/passwd` and `?path=-x` → 400 `invalid_path`; `/artifacts` → `[]`; unknown
+  session → 404. Proves the git shell-out works end to end (unit tests use a fake runner).
 
 ## 8. Build sequence (Opus locks core / Sonnet does mechanical)
 1. `GitService` + `GitRunner` seam + `git status`/`diff` parsing (Opus locks parsing + security).
