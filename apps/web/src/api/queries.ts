@@ -8,6 +8,8 @@ export const queryKeys = {
   sessions: (filters?: { projectId?: string; status?: SessionStatus }) =>
     ["sessions", filters ?? {}] as const,
   session: (id: string) => ["session", id] as const,
+  sessionFiles: (id: string) => ["session", id, "files"] as const,
+  sessionDiff: (id: string, path?: string) => ["session", id, "diff", path ?? null] as const,
   projects: ["projects"] as const,
 };
 
@@ -27,6 +29,22 @@ export function useSession(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.session(id ?? ""),
     queryFn: () => api.getSession(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+export function useSessionFiles(id: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sessionFiles(id ?? ""),
+    queryFn: () => api.getFiles(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+export function useSessionDiff(id: string | undefined, path: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.sessionDiff(id ?? "", path),
+    queryFn: () => api.getDiff(id as string, path),
     enabled: Boolean(id),
   });
 }

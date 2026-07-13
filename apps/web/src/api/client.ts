@@ -19,6 +19,30 @@ export class ApiError extends Error {
   }
 }
 
+export type FileStatus = "added" | "modified" | "deleted" | "renamed" | "untracked";
+
+export interface ChangedFile {
+  path: string;
+  status: FileStatus;
+  staged: boolean;
+  untracked: boolean;
+}
+
+export interface FilesResult {
+  workingDirectory: string;
+  isGitRepo: boolean;
+  branch: string | null;
+  head: string | null;
+  files: ChangedFile[];
+}
+
+export interface DiffResult {
+  workingDirectory: string;
+  isGitRepo: boolean;
+  path?: string;
+  diff: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
     credentials: "include",
@@ -69,6 +93,9 @@ export const api = {
     request<{ session: AgentSession; headSequence: number }>(`/sessions/${id}`),
   getSessionEvents: (id: string, since: number) =>
     request<AgentEvent[]>(`/sessions/${id}/events?since=${since}`),
+  getFiles: (id: string) => request<FilesResult>(`/sessions/${id}/files`),
+  getDiff: (id: string, path?: string) =>
+    request<DiffResult>(`/sessions/${id}/diff${path ? `?path=${encodeURIComponent(path)}` : ""}`),
 
   sendMessage: (id: string, text: string, idempotencyKey?: string) =>
     request<void>(`/sessions/${id}/messages`, {
