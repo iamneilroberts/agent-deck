@@ -1,0 +1,30 @@
+{
+  "name": "@agentdeck/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Fastify REST + WebSocket server wiring the vendor-neutral adapters, event store, and mobile UI together.",
+  "main": "./src/main.ts",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentdeck/event-store": "*",
+    "@agentdeck/fake-adapter": "*",
+    "@agentdeck/shared": "*",
+    "@fastify/cookie": "^11.1.1",
+    "@fastify/websocket": "^11.3.0",
+    "fastify": "^5.10.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "ws": "^8.18.0"
+  }
+}

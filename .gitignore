@@ -8,3 +8,6 @@ spikes/**/captured/raw-*.jsonl
 .env
 .env.*
 .dev.vars
+
+# Local SQLite data (apps/server's EventStore file, when not overridden via AGENTDECK_DB_PATH)
+*.sqlite3

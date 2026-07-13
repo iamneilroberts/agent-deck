@@ -9,11 +9,13 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev --workspace @agentdeck/server\" \"npm run dev --workspace @agentdeck/web\"",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
