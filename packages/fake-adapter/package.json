@@ -1,0 +1,19 @@
+{
+  "name": "@agentdeck/fake-adapter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministic AgentAdapter with no real agent process, for UI/server testing without paid API calls.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentdeck/shared": "*"
+  }
+}
