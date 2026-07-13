@@ -45,5 +45,19 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   registerUnroutedSessionRoutes(app);
   registerEventsRoute(app, deps.store, lifecycle);
 
+  // On close (SIGTERM/SIGINT handlers in main.ts call app.close()), stop every live adapter
+  // session so real `codex`/`claude` child processes don't outlive the server. Dedupe by
+  // instance — the registry maps several kinds onto shared adapter objects.
+  app.addHook("onClose", async () => {
+    const uniqueAdapters = new Set(deps.adapters.values());
+    for (const adapter of uniqueAdapters) {
+      try {
+        await adapter.shutdown();
+      } catch (err) {
+        app.log.error({ err, adapter: adapter.kind }, "adapter shutdown failed");
+      }
+    }
+  });
+
   return app;
 }

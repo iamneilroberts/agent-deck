@@ -43,6 +43,7 @@ export class ControllableAdapter implements AgentAdapter {
   async answerUserInput(): Promise<void> {}
   async interrupt(): Promise<void> {}
   async stop(): Promise<void> {}
+  async shutdown(): Promise<void> {}
 
   async listRecoverableSessions(): Promise<RecoverableSession[]> {
     return [];

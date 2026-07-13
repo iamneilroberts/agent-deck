@@ -85,6 +85,9 @@ export interface AgentAdapter {
   /** End the session and release its process resources. */
   stop(sessionId: string): Promise<void>;
 
+  /** Stop every live session this adapter owns (used on server shutdown). Idempotent. */
+  shutdown(): Promise<void>;
+
   /** Subscribe to this session's normalized event stream. */
   subscribe(sessionId: string, listener: (event: AgentEvent) => void): UnsubscribeFunction;
 
