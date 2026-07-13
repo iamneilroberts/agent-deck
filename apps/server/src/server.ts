@@ -11,9 +11,11 @@ import { registerCapabilitiesRoute } from "./routes/capabilities.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerSessionRoutes } from "./routes/sessions.js";
 import { registerApprovalRoutes } from "./routes/approvals.js";
+import { registerGitReviewRoutes } from "./routes/git-review.js";
 import { registerUnroutedSessionRoutes } from "./routes/unrouted.js";
 import { registerEventsRoute } from "./ws/events-route.js";
 import { Lifecycle } from "./lifecycle.js";
+import { GitService } from "./git/git-service.js";
 import { IdempotencyStore } from "./idempotency.js";
 
 export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
@@ -39,6 +41,7 @@ export async function buildServer(deps: ServerDeps): Promise<FastifyInstance> {
   const idempotency = new IdempotencyStore();
   registerSessionRoutes(app, deps.store, lifecycle, idempotency);
   registerApprovalRoutes(app, lifecycle, idempotency);
+  registerGitReviewRoutes(app, deps.store, deps.gitService ?? new GitService());
   registerUnroutedSessionRoutes(app);
   registerEventsRoute(app, deps.store, lifecycle);
 

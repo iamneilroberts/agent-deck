@@ -83,14 +83,13 @@ describe("projects + sessions", () => {
     expect(res.statusCode).toBe(501);
   });
 
-  it("Phase-3/5 session routes are 501, not 404", async () => {
+  it("still-unbuilt session routes (Phase 5 /handoff) are 501, not 404", async () => {
     const { app } = await buildTestServer();
     const cookie = await loginCookieHeader(app);
     const { session } = await createProjectAndSession(app, cookie);
-    for (const path of ["diff", "files", "artifacts", "handoff"]) {
-      const res = await app.inject({ method: "GET", url: `/api/sessions/${session.id}/${path}`, headers: { cookie } });
-      expect(res.statusCode).toBe(501);
-    }
+    // /diff, /files, /artifacts are implemented in Phase 3 (see git-review tests); /handoff remains.
+    const res = await app.inject({ method: "GET", url: `/api/sessions/${session.id}/handoff`, headers: { cookie } });
+    expect(res.statusCode).toBe(501);
   });
 });
 

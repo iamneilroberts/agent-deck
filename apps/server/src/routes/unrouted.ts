@@ -1,9 +1,9 @@
-// Phase 3 (/diff, /files, /artifacts) and Phase 5 (/handoff) routes: explicitly out of scope
-// for Phase 1 per docs/api-contract.md — return 501 rather than 404 so a client can tell "not
-// built yet" apart from "wrong URL".
+// Still-unbuilt session sub-routes: Phase 5 `/handoff`. Return 501 rather than 404 so a client can
+// tell "not built yet" apart from "wrong URL". (/diff, /files, /artifacts moved to Phase 3's
+// registerGitReviewRoutes.)
 import type { FastifyInstance } from "fastify";
 
-const NOT_IMPLEMENTED_PATHS = ["diff", "files", "artifacts", "handoff"] as const;
+const NOT_IMPLEMENTED_PATHS = ["handoff"] as const;
 
 export function registerUnroutedSessionRoutes(app: FastifyInstance): void {
   for (const path of NOT_IMPLEMENTED_PATHS) {

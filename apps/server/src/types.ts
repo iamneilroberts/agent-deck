@@ -6,6 +6,7 @@
 // (the shared `AgentKindSchema` allows nothing else) — see README "Contract deviations".
 import type { AgentAdapter, AgentKind } from "@agentdeck/shared";
 import type { EventStore } from "@agentdeck/event-store";
+import type { GitService } from "./git/git-service.js";
 
 export type AdapterRegistryKind = AgentKind | "fake";
 
@@ -17,6 +18,9 @@ export interface ServerDeps {
   adapters: AdapterRegistry;
   /** Phase 1 single-user password. Never logged, never echoed in a response. */
   password: string;
+  /** Read-only git access for the Phase 3 review routes. Default `new GitService()`; tests inject
+   *  one backed by a fake `GitRunner` so no real repo is needed. */
+  gitService?: GitService;
   /** Server version string surfaced on `/api/health`. */
   version?: string;
 }
