@@ -109,9 +109,16 @@ notification can't slip past. `subscribe` (from `lifecycle`) is already register
 
 ## 4. Codex notification → AgentEvent mapping
 
-Pure function `mapNotification(n: WireServerNotification, ctx): AgentEvent[]` (0..n events). Table
-below; **bold rows are live-proven in the spikes**, the rest are inferred from the generated
-protocol types and MUST be reconciled against `codex app-server generate-ts` output before code.
+Implemented as `CodexMapper.map(n): CodexEventDraft[]` (0..n drafts; a draft = AgentEvent minus the
+envelope the adapter stamps). **Step 2 built this against a REAL captured turn**
+(`packages/adapter-codex/test/fixtures/turn-notifications.jsonl` — 62 notifications from a live
+reason→command→file-edit→reply turn), so the rows below are ground-truthed, not inferred. Confirmed
+shapes: `agentMessage.phase ∈ {commentary, final_answer}` (deltas carry only `itemId`, so the mapper
+tracks itemId→phase from `item/started`); `commandExecution` output arrives whole as
+`aggregatedOutput` on completion (no streaming notification); `fileChange.changes[].{path, kind.type,
+diff}`. Mapping decision (Opus-locked): **commentary→`reasoning`, final_answer→`assistant_message`**.
+12 fixture tests assert the exact sequence + schema-validity. Unknown item types / noise methods →
+emit nothing (design §8.1).
 
 | Codex notification | → AgentEvent | Notes |
 |---|---|---|
