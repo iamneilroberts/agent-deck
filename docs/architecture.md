@@ -127,21 +127,26 @@ removes the reverse-engineering risk the brief anticipated — we build against 
 ## 6. Claude adapter — corrected from the brief
 
 The brief assumed PTY + hooks + fragile terminal parsing as the *primary* transport. That is
-weaker than necessary. Claude Code exposes a headless, structured, streaming interface:
+weaker than necessary. Claude Code exposes a headless, structured, streaming interface —
+**verified by Spike B** (`spikes/claude-headless/`, `claude` v2.1.207, SDK 0.3.207):
 
-- `claude -p --output-format stream-json --input-format stream-json` — structured JSON events
-  (assistant messages, tool calls, tool results, result) and streamed user messages.
-- `--resume <session-id>` / `--continue` for recovery.
-- Programmatic approvals via a permission-prompt tool / the Agent SDK `canUseTool` callback —
-  the primitive we need for faithful approval pass-through.
-- `@anthropic-ai/claude-agent-sdk` (TypeScript) wraps all of the above.
+- `@anthropic-ai/claude-agent-sdk` `query()` — structured messages (`system/init` with
+  `session_id`, `assistant` text + `tool_use`, `user`/`tool_result`, `result` with cost/turns)
+  over the `stream-json` control protocol. `--output-format` ∈ `text|json|stream-json`.
+- `options.resume = <session_id>` recovers a session — context survived live. The SDK also
+  ships `listSessions`/`getSessionInfo`/`forkSession`/`tagSession` for recovery UI.
+- Programmatic approval is the SDK **`canUseTool(toolName, input)` callback** returning
+  `{behavior:"allow"|"deny", updatedInput}` — it wraps the control-protocol `can_use_tool`
+  message. **The `--permission-prompt-tool` flag the brief assumed is removed in v2.1.207.**
+- Interrupt + streaming input are first-class (`query` handle `.interrupt()`; CLI advertises
+  `capabilities:["interrupt_receipt_v1","msg_lifecycle_v1"]`).
 
-**Decision:** the Claude adapter's primary transport is the structured stream-json / Agent SDK
-surface, mirroring the Codex adapter. `node-pty` is the *fallback* for genuinely interactive
-TUI moments, not the main path. This is validated in a dedicated **Spike B** before the Claude
-adapter is built (exact current flags/SDK surface pinned via the claude-code-guide agent). The
-hooks bridge (`POST /internal/hooks/claude`, `AGENTDECK_SESSION_ID` correlation) remains, but
-as supplementary lifecycle signal rather than the source of truth.
+**Decision:** the Claude adapter's primary transport is the Agent SDK, mirroring the Codex
+adapter. `node-pty` is the *fallback* for genuinely interactive TUI moments, not the main path.
+AgentDeck-managed sessions pass `settingSources: []` (or a dedicated `CLAUDE_CONFIG_DIR`) so the
+operator's global hooks/CLAUDE.md don't bleed into a run, and the adapter filters
+`system/hook_*` noise. The hooks bridge (`POST /internal/hooks/claude`,
+`AGENTDECK_SESSION_ID`) is now *supplementary* lifecycle signal, not the source of truth.
 
 ## 7. Persistence, reliability, security
 
@@ -175,7 +180,8 @@ submit could harm.
 ## 9. Phases
 
 - **Phase 0 — spikes** *(current)*: A) Codex app-server ✅ and A′) cross-process recovery +
-  approval matrix ✅ (`spikes/codex-app-server/`); B) Claude stream-json + hooks + resume;
+  approval matrix ✅ (`spikes/codex-app-server/`); B) Claude headless via Agent SDK ✅
+  (`spikes/claude-headless/` — streaming + canUseTool + resume verified);
   C) mobile streaming/reconnect. Document all before the full build. A′ established that one
   app-server multiplexing threads is the source-of-truth model (concurrent processes don't
   share a live turn), and that restart-recovery via `thread/resume` preserves context.
