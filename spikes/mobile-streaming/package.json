@@ -1,0 +1,21 @@
+{
+  "name": "@agentdeck/spike-mobile-streaming",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 0 Spike C — mobile WebSocket streaming with reconnect-and-replay (fake events only).",
+  "scripts": {
+    "spike": "tsx src/spike.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
