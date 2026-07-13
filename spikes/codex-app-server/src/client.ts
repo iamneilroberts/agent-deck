@@ -58,6 +58,10 @@ export class CodexClient {
     return this.transport.request("thread/resume", params);
   }
 
+  threadRead(threadId: string, includeTurns = false): Promise<{ thread: { id: string; turns?: unknown[] } }> {
+    return this.transport.request("thread/read", { threadId, includeTurns });
+  }
+
   threadList(params: ThreadListParams = {}): Promise<{ data: Array<{ id: string; cwd: string; preview?: string }>; nextCursor: string | null }> {
     return this.transport.request("thread/list", params);
   }

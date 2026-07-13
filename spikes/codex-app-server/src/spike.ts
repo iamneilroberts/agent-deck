@@ -19,7 +19,8 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { CodexClient, textInput } from "./client.js";
+import { CodexClient } from "./client.js";
+import { runTurnToCompletion, nextTurnId } from "./turns.js";
 import { redact } from "./redact.js";
 import type { WireServerRequest } from "./proto.js";
 
@@ -169,62 +170,10 @@ function pickDecision(available: unknown[] | undefined): unknown {
   return hasAccept ? "accept" : (available[0] as unknown);
 }
 
-interface TurnResult {
-  turnId: string | null;
-  status: unknown;
-}
-
-/**
- * Fire a turn and resolve only when its `turn/completed` (or `error`) notification arrives.
- * turn/started gives us the turnId; we match completion by that id so concurrent bookkeeping
- * stays correct. Also fires the turn/start request (whose response = "accepted").
- */
-function runTurnToCompletion(client: CodexClient, threadId: string, text: string): Promise<TurnResult> {
-  return new Promise<TurnResult>((resolve, reject) => {
-    let turnId: string | null = null;
-    const timeout = setTimeout(() => {
-      off();
-      reject(new Error("turn did not complete within 120s"));
-    }, 120_000);
-    const off = client.onNotification((n) => {
-      if (n.method === "turn/started") {
-        turnId = (n.params as { turn: { id: string } }).turn.id;
-      } else if (n.method === "turn/completed") {
-        const p = n.params as { threadId: string; turn: { id: string; status: unknown } };
-        if (p.threadId === threadId && (turnId === null || p.turn.id === turnId)) {
-          clearTimeout(timeout);
-          off();
-          resolve({ turnId: p.turn.id, status: p.turn.status });
-        }
-      } else if (n.method === "error") {
-        const p = n.params as { threadId: string };
-        if (p.threadId === threadId) {
-          clearTimeout(timeout);
-          off();
-          reject(new Error(`turn error: ${JSON.stringify(n.params)}`));
-        }
-      }
-    });
-    client.turnStart({ threadId, input: textInput(text) }).catch(reject);
-  });
-}
-
 /** Start a turn, interrupt it once it is under way, and report the settled status. */
 async function runTurnAndInterrupt(client: CodexClient, threadId: string, text: string): Promise<string> {
   const completion = runTurnToCompletion(client, threadId, text);
-  // Wait for turn/started so there is something to interrupt.
-  const turnId = await new Promise<string | null>((resolve) => {
-    const off = client.onNotification((n) => {
-      if (n.method === "turn/started") {
-        off();
-        resolve((n.params as { turn: { id: string } }).turn.id);
-      }
-    });
-    setTimeout(() => {
-      off();
-      resolve(null);
-    }, 8000);
-  });
+  const turnId = await nextTurnId(client); // wait for turn/started so there's something to interrupt
   if (!turnId) return "no turn/started observed (nothing to interrupt)";
   await client.turnInterrupt({ threadId, turnId });
   try {

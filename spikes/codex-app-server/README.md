@@ -12,7 +12,8 @@ cd spikes/codex-app-server
 npm install
 npm run test        # pure-unit: framing + redaction (no agent needed)
 npm run typecheck
-npm run spike        # drives the REAL codex app-server (needs `codex` on PATH + logged in)
+npm run spike        # Spike A: full single-thread lifecycle + approval + interrupt
+npm run spike:aprime # Spike A': cross-process recovery + fuller approval matrix (needs `codex`)
 ```
 
 `npm run spike` performs a full lifecycle and writes two transcripts to `captured/`:
@@ -74,21 +75,43 @@ Latest run: `captured/session-2026-07-13T07-36-19-861Z.md`.
   reverse engineering; a version bump is regenerate-and-reconcile. `src/proto.ts` vendors only
   the hand-curated subset this spike uses.
 
+## Spike A′ — cross-process recovery + approval matrix
+
+`npm run spike:aprime` (latest: `captured/aprime-*.md`) answers the two most load-bearing of
+Spike A's open questions:
+
+- **Recovery survives a process restart — PROVEN.** Process A sets a codeword and exits; a
+  FRESH app-server process B does `thread/resume` + `thread/read {includeTurns:true}` (sees the
+  prior turn in history) and a follow-up turn correctly recalls the codeword. This is the
+  Phase 2 recovery path, working end to end.
+- **Concurrent attach = independent disk view, NOT a shared live stream.** While process A held
+  a turn in flight, a second live process B resumed + read the same thread successfully — but
+  saw only the *committed* history (the in-flight turn was not visible to B). **Design
+  consequence:** AgentDeck must treat **one app-server process as the source of truth per
+  thread**; a second process is a read-only/after-the-fact view, not a mirror of a live turn.
+  Two browser tabs → one AgentDeck server → one app-server; never two app-servers racing one
+  live turn.
+- **`item/fileChange/requestApproval` captured.** Unlike command-exec approvals, the fileChange
+  request ships **no `availableDecisions`** — the valid set is the fixed
+  `accept | acceptForSession | decline | cancel` enum, so the adapter must know that per
+  approval *kind* (command-exec is server-driven via `availableDecisions`; fileChange is a
+  fixed enum).
+
 ## What remains uncertain (for later phases)
 
 - **`thread/list` timing/consistency.** In one buggy run (turns still in flight) our just-
   created thread was briefly absent from `thread/list`; once turns settled it appeared. Needs
   a deliberate test of list-vs-active-thread consistency and the `useStateDbOnly` flag before
   Phase 2 relies on it for recovery UI.
-- **Reconnect to a *running* thread from a second process.** `thread/resume` docs describe
-  rejoining an active thread and treating a path as a consistency check. Not yet exercised
-  across two concurrent app-server clients — Phase 2 recovery needs this proven.
-- **Full approval matrix.** Only `item/commandExecution/requestApproval` was exercised live.
-  `item/fileChange/requestApproval`, `item/tool/requestUserInput`,
-  `item/permissions/requestApproval`, and `mcpServer/elicitation/request` still need capture.
-- **Managed process model.** One app-server per thread vs. one shared process multiplexing
-  threads (the protocol supports many threads per connection) — pick in Phase 2. The per-
-  thread `~/.codex` MCP boot cost argues for measuring startup latency.
+- **`requestUserInput` / `permissions` / `elicitation` approvals not yet triggered.**
+  `item/fileChange/requestApproval` and `item/commandExecution/requestApproval` are captured;
+  `item/tool/requestUserInput`, `item/permissions/requestApproval`, and
+  `mcpServer/elicitation/request` did not fire under the prompts tried and still need capture
+  (they need specific tool/MCP conditions).
+- **Managed process model — now better informed.** A′ shows concurrent processes don't share a
+  live turn, so the leaning is **one app-server multiplexing many threads** (the protocol
+  supports it) as the single source of truth, with restart-recovery via `thread/resume`. Still
+  measure the per-thread `~/.codex` MCP boot cost before finalizing in Phase 2.
 - **Cancellation/interrupt races.** Interrupt worked, but the exact ordering guarantees
   between `turn/interrupt`, in-flight approval requests, and `turn/completed` need a dedicated
   test.
@@ -119,8 +142,10 @@ src/framing.ts     NDJSON LineBuffer + classify() (dual ID-space routing)   [uni
 src/redact.ts      secret + home-path redaction                             [unit-tested]
 src/proto.ts       hand-curated subset of the generated protocol types
 src/transport.ts   spawn + framing + request correlation + server-request handling
-src/client.ts      thin typed layer (initialize / thread / turn / resume)
-src/spike.ts       the end-to-end demonstration + sanitized capture writer
+src/client.ts      thin typed layer (initialize / thread / turn / resume / read)
+src/turns.ts       shared turn helpers (await turn/completed notification, not the response)
+src/spike.ts       Spike A: end-to-end lifecycle demonstration + sanitized capture writer
+src/spike-aprime.ts Spike A': cross-process recovery + approval-matrix demonstration
 test/              framing + redaction unit tests
 captured/          sanitized session-*.md (committed); raw-*.jsonl (gitignored)
 ```

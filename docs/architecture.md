@@ -174,9 +174,11 @@ submit could harm.
 
 ## 9. Phases
 
-- **Phase 0 — spikes** *(current)*: A) Codex app-server ✅ (`spikes/codex-app-server/`);
-  B) Claude stream-json + hooks + resume; C) mobile streaming/reconnect. Document all three
-  before the full build.
+- **Phase 0 — spikes** *(current)*: A) Codex app-server ✅ and A′) cross-process recovery +
+  approval matrix ✅ (`spikes/codex-app-server/`); B) Claude stream-json + hooks + resume;
+  C) mobile streaming/reconnect. Document all before the full build. A′ established that one
+  app-server multiplexing threads is the source-of-truth model (concurrent processes don't
+  share a live turn), and that restart-recovery via `thread/resume` preserves context.
 - **Phase 1 — foundation**: monorepo, shared types/schemas, SQLite migrations, project
   registration, session state machine, event store + replay, fake adapter, basic responsive
   UI, auth skeleton, systemd dev unit. *Done when a fake session runs independent of the

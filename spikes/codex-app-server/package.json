@@ -6,6 +6,7 @@
   "description": "Phase 0 Spike A — drive the real codex app-server over stdio end to end.",
   "scripts": {
     "spike": "tsx src/spike.ts",
+    "spike:aprime": "tsx src/spike-aprime.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
