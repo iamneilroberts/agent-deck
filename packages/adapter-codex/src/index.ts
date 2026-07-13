@@ -16,4 +16,6 @@ export { CodexMapper } from "./mapping.js";
 export type { CodexEventDraft } from "./mapping.js";
 export { CodexApprovalBridge } from "./approvals-bridge.js";
 export type { EmitDraft } from "./approvals-bridge.js";
+export { CodexAdapter } from "./codex-adapter.js";
+export type { CodexAdapterOptions } from "./codex-adapter.js";
 export * from "./proto.js";
