@@ -25,6 +25,16 @@ async function main(): Promise<void> {
 
   await app.listen({ port, host });
   app.log.info(`AgentDeck server listening on http://${host}:${port}`);
+
+  // Graceful shutdown: close the server (fires the onClose hook that stops live adapter
+  // sessions, so codex/claude children don't outlive us) before exiting.
+  const shutdown = async (signal: string): Promise<void> => {
+    app.log.info(`${signal} received — shutting down`);
+    await app.close();
+    process.exit(0);
+  };
+  process.once("SIGTERM", () => void shutdown("SIGTERM"));
+  process.once("SIGINT", () => void shutdown("SIGINT"));
 }
 
 main().catch((err: unknown) => {

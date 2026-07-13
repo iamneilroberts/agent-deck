@@ -127,6 +127,12 @@ export class FakeAdapter implements AgentAdapter {
     this.listeners.delete(sessionId);
   }
 
+  async shutdown(): Promise<void> {
+    for (const [sessionId, runtime] of [...this.sessions]) {
+      if (!runtime.ended) await this.stop(sessionId);
+    }
+  }
+
   subscribe(sessionId: string, listener: (event: AgentEvent) => void): UnsubscribeFunction {
     let set = this.listeners.get(sessionId);
     if (!set) {
