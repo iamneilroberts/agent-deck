@@ -182,7 +182,9 @@ submit could harm.
 - **Phase 0 — spikes** *(current)*: A) Codex app-server ✅ and A′) cross-process recovery +
   approval matrix ✅ (`spikes/codex-app-server/`); B) Claude headless via Agent SDK ✅
   (`spikes/claude-headless/` — streaming + canUseTool + resume verified);
-  C) mobile streaming/reconnect. Document all before the full build. A′ established that one
+  C) mobile streaming/reconnect ✅ (`spikes/mobile-streaming/` — WebSocket reconnect-from-
+  last-sequence replay proven, no gaps/dups, localhost-only). **Phase 0 complete.**
+  A′ established that one
   app-server multiplexing threads is the source-of-truth model (concurrent processes don't
   share a live turn), and that restart-recovery via `thread/resume` preserves context.
 - **Phase 1 — foundation**: monorepo, shared types/schemas, SQLite migrations, project
