@@ -22,11 +22,15 @@ import {
 import { CodexTransport, type CodexTransportOptions, type ExitInfo, type TransportLike } from "./transport.js";
 import { CodexMapper, type CodexEventDraft } from "./mapping.js";
 import { CodexApprovalBridge } from "./approvals-bridge.js";
-import { textInput, type ThreadStartResult, type WireServerNotification } from "./proto.js";
+import { textInput, type AskForApproval, type SandboxMode, type ThreadStartResult, type WireServerNotification } from "./proto.js";
 
 export interface CodexAdapterOptions {
   /** Codex binary name/path. Default "codex". */
   command?: string;
+  /** Sandbox for new threads. Default "workspace-write". "read-only" forces approval on any write. */
+  sandbox?: SandboxMode;
+  /** When Codex asks for approval. Default "on-request". */
+  approvalPolicy?: AskForApproval;
   /** Inject a transport (default `new CodexTransport(...)`) — lets tests drive with no process. */
   transportFactory?: (opts: CodexTransportOptions) => TransportLike;
   /** Override event id generation for deterministic tests. Default `crypto.randomUUID`. */
@@ -51,6 +55,8 @@ export class CodexAdapter implements AgentAdapter {
   readonly kind: AgentKind = "codex";
 
   private readonly command: string;
+  private readonly sandbox: SandboxMode;
+  private readonly approvalPolicy: AskForApproval;
   private readonly transportFactory: (opts: CodexTransportOptions) => TransportLike;
   private readonly idGenerator: () => string;
   private readonly now: () => string;
@@ -61,6 +67,8 @@ export class CodexAdapter implements AgentAdapter {
 
   constructor(options: CodexAdapterOptions = {}) {
     this.command = options.command ?? "codex";
+    this.sandbox = options.sandbox ?? "workspace-write";
+    this.approvalPolicy = options.approvalPolicy ?? "on-request";
     this.transportFactory = options.transportFactory ?? ((opts) => new CodexTransport(opts));
     this.idGenerator = options.idGenerator ?? randomUUID;
     this.now = options.now ?? (() => new Date().toISOString());
@@ -84,8 +92,8 @@ export class CodexAdapter implements AgentAdapter {
     await this.initialize(runtime);
     const started = await runtime.transport.request<ThreadStartResult>("thread/start", {
       cwd: input.workingDirectory,
-      approvalPolicy: "on-request",
-      sandbox: "workspace-write",
+      approvalPolicy: this.approvalPolicy,
+      sandbox: this.sandbox,
       model: input.model ?? null,
     });
     const threadId = started.thread.id;

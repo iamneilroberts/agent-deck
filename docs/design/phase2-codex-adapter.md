@@ -307,8 +307,16 @@ turn/approval races ahead of the `running` emit, coalesce: emit `running` first.
 3. `approvals-bridge.ts` + tests (incl. object-decision round-trip, crash → reject-held).
 4. `codex-adapter.ts` assembling the above against `AgentAdapter`; adapter test with fake transport.
 5. Register in the server; `npm test` green across workspaces.
-6. Opus live-drive against real `codex` (DoD) — incl. an actual command approval, a fileChange
-   **decline**, an interrupt, and a resume.
+6. **DONE ✅** — Opus live-drive against real `codex` through the full HTTP/WS server surface.
+   Result (every check passed): 401 auth gate → login → project → **real codex session** →
+   `approval_requested` (a `file_change` approval, options `accept/acceptForSession/decline/cancel`
+   = the generated fixed enum) surfaced over WS → **accept** resolved via `POST
+   /api/approvals/:id/resolve` (202) → held wire promise resolved → **`hello.txt` written on disk**
+   (the accept round-trip produced a real effect) → completion → `session_started` carried
+   `externalSessionId` → assistant streamed → sequences gap-free 1..20 → reconnect-replay from
+   seq 11 gap-free → resume → 200. This proves "control a real Codex session from the phone."
+   Needed one adapter change: `sandbox`/`approvalPolicy` made configurable (default
+   `workspace-write`/`on-request`; the drive used `read-only` to force the approval).
 
 Pattern (per handoff): **Opus locks §4/§5/§6** (the mapping + approval + status core), **Sonnet
 does the mechanical lift/wiring/tests**, **Opus does the live drive**.
@@ -332,4 +340,13 @@ Folded-in fixes already reflected above: interrupted `turn/completed` → `pause
 (§4); `answerUserInput` status symmetry + single-question limit (§5); object-decision `{decision:
 obj}` wrapper (§5.2); interrupt null-`turnId` race (§3 table); `source` convention (§3); recovery
 scoped to one AgentDeck-process lifetime + `externalSessionId` server-persist gap (§7/§8.6).
-None of these block starting step 0/1; all three gate items must close before §4/§5 are locked.
+
+**Phase 2 status: COMPLETE.** All build steps 0–6 done; DoD met by the live drive (§10.6).
+adapter-codex = 42 unit tests; 117 total across the monorepo. Deferred to later phases (surfaced
+during the build, NOT Phase-2 blockers):
+- **Server shutdown hook** — `buildServer`/`main.ts` has no lifecycle to `stop()` active adapter
+  sessions on close, so `codex app-server` children outlive server shutdown (Phase 6 hardening).
+- **`externalSessionId` persistence** — resume only works within one AgentDeck-process lifetime
+  (§8.6); a threaded cleanup for cross-restart resume.
+- **requestUserInput / permissions / mcp approvals** — stub-declined until live-captured (§8.2).
+- Interrupt null-`turnId` race (§3) — simple no-op today; await-next-turn deferred.
