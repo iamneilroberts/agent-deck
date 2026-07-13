@@ -12,4 +12,8 @@ export type {
 } from "./transport.js";
 export { LineBuffer, classify } from "./framing.js";
 export type { WireKind } from "./framing.js";
+export { CodexMapper } from "./mapping.js";
+export type { CodexEventDraft } from "./mapping.js";
+export { CodexApprovalBridge } from "./approvals-bridge.js";
+export type { EmitDraft } from "./approvals-bridge.js";
 export * from "./proto.js";
